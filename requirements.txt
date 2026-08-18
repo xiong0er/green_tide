@@ -1,0 +1,39 @@
+# =============================================================================
+# Green Tide Algal Bloom Segmentation — Dependencies
+# Python 3.10+ (developed on 3.14.3)
+# =============================================================================
+
+# --- Core (required) --------------------------------------------------------
+# PyTorch: install the build matching your CUDA driver first.
+#   CPU-only:      pip install torch
+#   CUDA 12.x:     pip install torch --index-url https://download.pytorch.org/whl/cu121
+#   (developed on torch 2.10.0+cu126)
+torch>=2.1.0
+torchvision>=0.16      # classic baselines (SegFormer/Swin backbones)
+
+numpy>=1.24
+rasterio>=1.3          # Sentinel-2 / Landsat-8 GeoTIFF I/O
+einops>=0.7            # tensor rearrangement in encoders
+albumentations>=1.3    # training-time data augmentation
+scipy>=1.10            # zoom / resampling in evaluation
+tqdm>=4.66             # progress bars
+PyYAML>=6.0            # experiment config
+
+# Triton kernels (FastPixelUnshuffle used by the MSI encoder).
+# NOTE: Triton on Windows is sensitive to the torch build; if unavailable,
+#       the OLI branch already uses strided convs and the routed/single models
+#       can run without the PixelUnshuffle path.
+triton>=2.1
+
+# --- Visualization (needed to run visualization/*.py) -----------------------
+matplotlib>=3.7
+
+# --- Optional baselines -----------------------------------------------------
+# AlgaeMamba baseline (running/algae_mamba_model.py)
+monai>=1.3
+
+# Deprecated LPIPS / reconstruction branches (not used by final models)
+# piq>=0.8
+
+# Image-size checks in visualization scripts
+Pillow>=9.0
