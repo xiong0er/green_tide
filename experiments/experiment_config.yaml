@@ -1,0 +1,230 @@
+# ============================================================================
+# 绿潮分割实验配置 - 双设备并行版
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# 第 1 阶段：基线确定
+# ----------------------------------------------------------------------------
+phase1_experiments:
+  Exp-1A:
+    name: "S2_SingleUNet_Baseline"
+    device: "A"
+    model: "MSISingleUNet"
+    train_data: "dataset3.0/s2_filtered_3pct"
+    val_split: 0.2
+    config:
+      msi_channels: 11
+      hidden_dim: 256
+      num_mamba_layers: 1
+      eca_topk_msi: 6
+      batch_size: 8
+      epochs: 50
+      lr: 0.001
+
+  Exp-1B:
+    name: "S2_to_L8_CrossSensor"
+    device: "A"
+    model: "MSISingleUNet"
+    train_data: "dataset3.0/s2_filtered_3pct"
+    val_data: "dataset3.0/l8_algae_data"
+    cross_sensor_test: true
+    config:
+      msi_channels: 11
+      hidden_dim: 256
+      num_mamba_layers: 1
+      eca_topk_msi: 6
+      batch_size: 8
+      epochs: 50
+      lr: 0.001
+
+  Exp-1C:
+    name: "L8_SingleUNet_Baseline"
+    device: "B"
+    model: "MSISingleUNet"
+    train_data: "dataset3.0/l8_algae_data"
+    val_split: 0.2
+    config:
+      msi_channels: 6  # OLI 波段数
+      hidden_dim: 256
+      num_mamba_layers: 1
+      eca_topk_msi: 4
+      batch_size: 8
+      epochs: 50
+      lr: 0.001
+
+  Exp-1D:
+    name: "Mixed_DualBranch_Baseline"
+    device: "B"
+    model: "DualBranchUNet"
+    train_data: ["dataset3.0/s2_filtered_3pct", "dataset3.0/l8_algae_data"]
+    val_split: 0.2
+    config:
+      msi_channels: 11
+      oli_channels: 6
+      hidden_dim: 512
+      num_mamba_layers: 2
+      eca_topk_msi: 6
+      eca_topk_oli: 3
+      batch_size: 8
+      epochs: 50
+      lr: 0.001
+
+# ----------------------------------------------------------------------------
+# 第 2 阶段：架构 Ablation (设备 A: ECA+Mamba, 设备 B: 融合 + 模块)
+# ----------------------------------------------------------------------------
+phase2_experiments:
+  # 设备 A 任务线
+  Exp-2A-1:
+    name: "ECA_TopK_3"
+    device: "A"
+    model: "MSISingleUNet"
+    train_data: "dataset3.0/s2_filtered_3pct"
+    config:
+      eca_topk_msi: 3
+      hidden_dim: 256
+      num_mamba_layers: 1
+
+  Exp-2A-2:
+    name: "ECA_TopK_5"
+    device: "A"
+    model: "MSISingleUNet"
+    train_data: "dataset3.0/s2_filtered_3pct"
+    config:
+      eca_topk_msi: 5
+      hidden_dim: 256
+      num_mamba_layers: 1
+
+  Exp-2A-3:
+    name: "ECA_TopK_7"
+    device: "A"
+    model: "MSISingleUNet"
+    train_data: "dataset3.0/s2_filtered_3pct"
+    config:
+      eca_topk_msi: 7
+      hidden_dim: 256
+      num_mamba_layers: 1
+
+  Exp-2B-1:
+    name: "Mamba_0_Layer"
+    device: "A"
+    model: "MSISingleUNet"
+    train_data: "dataset3.0/s2_filtered_3pct"
+    config:
+      num_mamba_layers: 0
+      num_topk_layers: 4
+      hidden_dim: 256
+
+  Exp-2B-2:
+    name: "Mamba_2_Layer"
+    device: "A"
+    model: "MSISingleUNet"
+    train_data: "dataset3.0/s2_filtered_3pct"
+    config:
+      num_mamba_layers: 2
+      num_topk_layers: 2
+      hidden_dim: 256
+
+  # 设备 B 任务线
+  Exp-2C-1:
+    name: "Fusion_PixelGate"
+    device: "B"
+    model: "DualBranchUNet"
+    train_data: ["dataset3.0/s2_filtered_3pct", "dataset3.0/l8_algae_data"]
+    config:
+      fusion_type: "pixel_gate"
+      hidden_dim: 512
+
+  Exp-2C-2:
+    name: "Fusion_ConcatConv"
+    device: "B"
+    model: "DualBranchUNet"
+    train_data: ["dataset3.0/s2_filtered_3pct", "dataset3.0/l8_algae_data"]
+    config:
+      fusion_type: "concat_conv"
+      hidden_dim: 512
+
+  Exp-2D-1:
+    name: "SFT_Disabled"
+    device: "B"
+    model: "DualBranchUNet"
+    train_data: ["dataset3.0/s2_filtered_3pct", "dataset3.0/l8_algae_data"]
+    config:
+      use_sft: false
+      hidden_dim: 512
+
+  Exp-2E-1:
+    name: "HiddenDim_256"
+    device: "B"
+    model: "DualBranchUNet"
+    train_data: ["dataset3.0/s2_filtered_3pct", "dataset3.0/l8_algae_data"]
+    config:
+      hidden_dim: 256
+
+  Exp-2E-2:
+    name: "HiddenDim_1024"
+    device: "B"
+    model: "DualBranchUNet"
+    train_data: ["dataset3.0/s2_filtered_3pct", "dataset3.0/l8_algae_data"]
+    config:
+      hidden_dim: 1024
+
+# ----------------------------------------------------------------------------
+# 第 3 阶段：数据策略
+# ----------------------------------------------------------------------------
+phase3_experiments:
+  Exp-3A:
+    name: "Data_100_S2"
+    device: "A"
+    train_data: "dataset3.0/s2_filtered_3pct"
+    data_ratio: "100% s2"
+
+  Exp-3B:
+    name: "Data_100_L8"
+    device: "B"
+    train_data: "dataset3.0/l8_algae_data"
+    data_ratio: "100% l8"
+
+  Exp-3C:
+    name: "Data_70S2_30L8"
+    device: "A"
+    train_data: ["dataset3.0/s2_filtered_3pct", "dataset3.0/l8_algae_data"]
+    data_ratio: "70% s2 + 30% l8"
+    s2_sample_ratio: 1.0
+    l8_sample_ratio: 0.43  # 30/70
+
+  Exp-3D:
+    name: "Data_50S2_50L8"
+    device: "B"
+    train_data: ["dataset3.0/s2_filtered_3pct", "dataset3.0/l8_algae_data"]
+    data_ratio: "50% s2 + 50% l8"
+    s2_sample_ratio: 1.0
+    l8_sample_ratio: 0.52  # 50/96
+
+  Exp-3E:
+    name: "Data_30S2_70L8"
+    device: "A"
+    train_data: ["dataset3.0/s2_filtered_3pct", "dataset3.0/l8_algae_data"]
+    data_ratio: "30% s2 + 70% l8"
+    s2_sample_ratio: 0.43
+    l8_sample_ratio: 1.0
+
+# ----------------------------------------------------------------------------
+# 通用配置
+# ----------------------------------------------------------------------------
+common_config:
+  img_size: 256
+  batch_size: 8
+  epochs: 50
+  lr: 0.001
+  encoder_lr_mult: 1.0
+  weight_decay: 0.01
+  warmup_steps: 500
+  use_reduce_lr_on_plateau: true
+  reduce_lr_patience: 10
+  reduce_lr_factor: 0.7
+  patience: 15
+  early_stop_delta: 1.0e-6
+  use_email: true
+  email_interval: 5
+  plot_interval: 5
+  seed: 42
